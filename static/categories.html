@@ -188,29 +188,6 @@
       </div>
     </main>
 
-    <script>
-      async function loadCategories() {
-        const container = document.getElementById("categories-container");
-        const categories = await fetch("/categories").then(r => r.json());
-
-        categories.recordset.forEach((category, index) => {
-          const delay = 0.15 + index * 0.1;
-          const card = document.createElement("div");
-          card.className = "cat-section movie-card p-6 cursor-pointer";
-          card.style.animationDelay = `${delay}s`;
-          card.innerHTML = `
-            <p class="text-base font-semibold text-white/90 leading-tight mb-2">${category.name}</p>
-            <p class="text-xs text-white/40 font-light">${category.description ?? ""}</p>
-          `;
-          card.onclick = () => {
-            card.classList.add("clicked");
-            window.location.href = `/quizzes.html?categoryId=${category.id}&categoryName=${encodeURIComponent(category.name)}`;
-          };
-          container.appendChild(card);
-        });
-      }
-
-      loadCategories();
-    </script>
+    <script src="js/client.js"></script>
   </body>
 </html>

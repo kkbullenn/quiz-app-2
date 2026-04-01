@@ -1,83 +1,65 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using quiz_app_2.Services;
 
 namespace quiz_app_2.Controllers
 {
-    public class QuizzesController : Controller
+    [ApiController]
+    [Authorize]
+    public class QuizzesController : ControllerBase
     {
-        // GET: QuizzesController
-        public ActionResult Index()
+        private readonly DatabaseService _db;
+
+        public QuizzesController(DatabaseService db)
         {
-            return View();
+            _db = db;
         }
 
-        // GET: QuizzesController/Details/5
-        public ActionResult Details(int id)
+        [HttpGet("/quizzes")]
+        public async Task<IActionResult> GetAll()
         {
-            return View();
+            var quizzes = await _db.GetAllQuizzesAsync();
+            return Ok(quizzes);
         }
 
-        // GET: QuizzesController/Create
-        public ActionResult Create()
+        [HttpGet("/quizzes/autoplay")]
+        public async Task<IActionResult> GetAutoplay()
         {
-            return View();
+            var quizzes = await _db.GetAutoplayQuizzesAsync();
+            return Ok(quizzes);
         }
 
-        // POST: QuizzesController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        [HttpGet("/quizzes/{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            try
+            var quiz = await _db.GetQuizByIdAsync(id);
+            if (quiz == null) return NotFound(new { error = "Quiz not found" });
+            return Ok(quiz);
+        }
+
+        [HttpGet("/quizzes/{id}/questions")]
+        public async Task<IActionResult> GetQuestions(int id)
+        {
+            var quiz = await _db.GetQuizByIdAsync(id);
+            if (quiz == null) return NotFound(new { error = "Quiz not found" });
+
+            var questions = await _db.GetQuestionsByQuizIdAsync(id);
+
+            var result = new List<object>();
+            foreach (var q in questions)
             {
-                return RedirectToAction(nameof(Index));
+                var answers = await _db.GetAnswersByQuestionIdAsync(q.Id);
+                result.Add(new { question = q, answers });
             }
-            catch
-            {
-                return View();
-            }
+
+            return Ok(result);
         }
 
-        // GET: QuizzesController/Edit/5
-        public ActionResult Edit(int id)
+        [HttpPost("/questions/{id}/answer")]
+        public async Task<IActionResult> SubmitAnswer(int id)
         {
-            return View();
-        }
-
-        // POST: QuizzesController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: QuizzesController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: QuizzesController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            var isCorrect = await _db.CheckAnswerAsync(id);
+            return Ok(new { isCorrect });
         }
     }
 }

@@ -1,43 +1,73 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using Microsoft.IdentityModel.Tokens;
+using quiz_app_2.Services;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace quiz_app_2.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
-        // GET: api/<AuthController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly DatabaseService _db;
+        private readonly IConfiguration _config;
+
+        public AuthController(DatabaseService db, IConfiguration config)
         {
-            return new string[] { "value1", "value2" };
+            _db = db;
+            _config = config;
         }
 
-        // GET api/<AuthController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        private string GenerateToken(int userId, string email, bool isAdmin)
         {
-            return "value";
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Secret"]!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var claims = new[]
+            {
+                new Claim("userId", userId.ToString()),
+                new Claim("email", email),
+                new Claim("isAdmin", isAdmin.ToString().ToLower())
+            };
+            var token = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddDays(7), signingCredentials: creds);
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // POST api/<AuthController>
-        [HttpPost]
-        public void Post([FromBody] string value)
+        [HttpPost("/register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest req)
         {
+            if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
+                return BadRequest(new { error = "Email and password are required" });
+
+            if (req.Password.Length < 6)
+                return BadRequest(new { error = "Password must be at least 6 characters" });
+
+            var existing = await _db.GetUserByEmailAsync(req.Email);
+            if (existing != null)
+                return Conflict(new { error = "An account with that email already exists" });
+
+            var hash = BCrypt.Net.BCrypt.HashPassword(req.Password);
+            var userId = await _db.CreateUserAsync(req.Email, hash);
+            var token = GenerateToken(userId, req.Email, false);
+
+            return Ok(new { success = true, token, isAdmin = false });
         }
 
-        // PUT api/<AuthController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPost("/login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-        }
+            if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
+                return BadRequest(new { error = "Email and password are required" });
 
-        // DELETE api/<AuthController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            var user = await _db.GetUserByEmailAsync(req.Email);
+            if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
+                return Unauthorized(new { error = "Invalid email or password" });
+
+            var token = GenerateToken(user.Id, user.Email, user.IsAdmin);
+            return Ok(new { success = true, token, isAdmin = user.IsAdmin });
         }
     }
+
+    public record RegisterRequest(string Email, string Password);
+    public record LoginRequest(string Email, string Password);
 }

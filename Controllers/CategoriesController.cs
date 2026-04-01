@@ -1,43 +1,37 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using quiz_app_2.Services;
 
 namespace quiz_app_2.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CategoriesController : ControllerBase
     {
-        // GET: api/<CategoriesController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly DatabaseService _db;
+
+        public CategoriesController(DatabaseService db)
         {
-            return new string[] { "value1", "value2" };
+            _db = db;
         }
 
-        // GET api/<CategoriesController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("/categories")]
+        public async Task<IActionResult> GetAll()
         {
-            return "value";
+            var categories = await _db.GetAllCategoriesAsync();
+            return Ok(categories);
         }
 
-        // POST api/<CategoriesController>
-        [HttpPost]
-        public void Post([FromBody] string value)
+        [HttpGet("/categories/{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
-        }
+            var category = await _db.GetCategoryByIdAsync(id);
+            if (category == null) return NotFound(new { error = "Category not found" });
 
-        // PUT api/<CategoriesController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
+            var quizzes = await _db.GetAllQuizzesAsync();
+            var filtered = quizzes.Where(q => q.CategoryId == id).ToList();
 
-        // DELETE api/<CategoriesController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            return Ok(new { category, quizzes = filtered });
         }
     }
 }

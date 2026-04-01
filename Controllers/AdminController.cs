@@ -1,83 +1,170 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using quiz_app_2.Services;
 
 namespace quiz_app_2.Controllers
 {
-    public class AdminController : Controller
+    [ApiController]
+    [Authorize]
+    public class AdminController : ControllerBase
     {
-        // GET: AdminController
-        public ActionResult Index()
+        private readonly DatabaseService _db;
+
+        public AdminController(DatabaseService db)
         {
-            return View();
+            _db = db;
         }
 
-        // GET: AdminController/Details/5
-        public ActionResult Details(int id)
+        private bool IsAdmin()
         {
-            return View();
+            var claim = User.Claims.FirstOrDefault(c => c.Type == "isAdmin");
+            return claim?.Value == "true";
         }
 
-        // GET: AdminController/Create
-        public ActionResult Create()
+        // ==================
+        // USERS
+        // ==================
+
+        [HttpGet("/admin/users")]
+        public async Task<IActionResult> GetUsers()
         {
-            return View();
+            if (!IsAdmin()) return Forbid();
+            var users = await _db.GetAllUsersAsync();
+            return Ok(users);
         }
 
-        // POST: AdminController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        [HttpDelete("/admin/delete-user/{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
         {
-            try
+            if (!IsAdmin()) return Forbid();
+            await _db.DeleteUserAsync(id);
+            return Ok(new { success = true });
+        }
+
+        // ==================
+        // CATEGORIES
+        // ==================
+
+        [HttpPost("/admin/categories")]
+        public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequest req)
+        {
+            if (!IsAdmin()) return Forbid();
+            if (string.IsNullOrWhiteSpace(req.Name))
+                return BadRequest(new { error = "Name is required" });
+
+            var id = await _db.CreateCategoryAsync(req.Name, req.ImageUrl);
+            return Ok(new { success = true, id });
+        }
+
+        [HttpDelete("/admin/categories/{id}")]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            if (!IsAdmin()) return Forbid();
+            await _db.DeleteCategoryAsync(id);
+            return Ok(new { success = true });
+        }
+
+        // ==================
+        // QUIZZES
+        // ==================
+
+        [HttpPost("/admin/quizzes")]
+        public async Task<IActionResult> CreateQuiz([FromBody] CreateQuizRequest req)
+        {
+            if (!IsAdmin()) return Forbid();
+            if (string.IsNullOrWhiteSpace(req.Title))
+                return BadRequest(new { error = "Title is required" });
+
+            var id = await _db.CreateQuizAsync(req.CategoryId, req.Title, req.Description, req.Autoplay);
+            return Ok(new { success = true, id });
+        }
+
+        [HttpGet("/admin/quizzes")]
+        public async Task<IActionResult> GetQuizzes()
+        {
+            if (!IsAdmin()) return Forbid();
+            var quizzes = await _db.GetAllQuizzesAsync();
+            return Ok(quizzes);
+        }
+
+        [HttpGet("/admin/quizzes/{id}/questions")]
+        public async Task<IActionResult> GetQuizQuestions(int id)
+        {
+            if (!IsAdmin()) return Forbid();
+            var questions = await _db.GetQuestionsByQuizIdAsync(id);
+            var result = new List<object>();
+            foreach (var q in questions)
             {
-                return RedirectToAction(nameof(Index));
+                var answers = await _db.GetAnswersByQuestionIdAsync(q.Id);
+                result.Add(new { question = q, answers });
             }
-            catch
-            {
-                return View();
-            }
+            return Ok(result);
         }
 
-        // GET: AdminController/Edit/5
-        public ActionResult Edit(int id)
+        [HttpDelete("/admin/quizzes/{id}")]
+        public async Task<IActionResult> DeleteQuiz(int id)
         {
-            return View();
+            if (!IsAdmin()) return Forbid();
+            await _db.DeleteQuizAsync(id);
+            return Ok(new { success = true });
         }
 
-        // POST: AdminController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        [HttpPatch("/admin/quizzes/{id}")]
+        public async Task<IActionResult> UpdateQuiz(int id, [FromBody] UpdateQuizRequest req)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            if (!IsAdmin()) return Forbid();
+            if (string.IsNullOrWhiteSpace(req.Title))
+                return BadRequest(new { error = "Title is required" });
+
+            await _db.UpdateQuizAsync(id, req.CategoryId, req.Title, req.Description);
+            return Ok(new { success = true });
         }
 
-        // GET: AdminController/Delete/5
-        public ActionResult Delete(int id)
+        // ==================
+        // QUESTIONS
+        // ==================
+
+        [HttpPost("/admin/questions")]
+        public async Task<IActionResult> CreateQuestion([FromBody] CreateQuestionRequest req)
         {
-            return View();
+            if (!IsAdmin()) return Forbid();
+            if (string.IsNullOrWhiteSpace(req.Text))
+                return BadRequest(new { error = "Question text is required" });
+
+            var questionId = await _db.CreateQuestionAsync(
+            req.QuizId, req.Text, req.QuestionType, req.MediaUrl, req.MediaType, req.DisplayOrder);
+
+            foreach (var answer in req.Answers)
+            {
+                await _db.CreateAnswerAsync(questionId, answer.Text, answer.IsCorrect);
+            }
+
+            return Ok(new { success = true, id = questionId });
         }
 
-        // POST: AdminController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        [HttpDelete("/admin/questions/{id}")]
+        public async Task<IActionResult> DeleteQuestion(int id)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            if (!IsAdmin()) return Forbid();
+            await _db.DeleteQuestionAsync(id);
+            return Ok(new { success = true });
         }
+
+
+
+
     }
+
+    public record CreateCategoryRequest(string Name, string? ImageUrl);
+    public record CreateQuizRequest(int CategoryId, string Title, string? Description, bool Autoplay);
+    public record UpdateQuizRequest(int CategoryId, string Title, string? Description);
+    public record CreateQuestionRequest(
+    int QuizId,
+    string Text,
+    string QuestionType,
+    string? MediaUrl,
+    string? MediaType,
+    int DisplayOrder,
+    List<AnswerInput> Answers);
+    public record AnswerInput(string Text, bool IsCorrect);
 }
