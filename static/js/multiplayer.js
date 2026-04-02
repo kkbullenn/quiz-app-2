@@ -12,7 +12,7 @@
     document.getElementById("room-code-display").textContent = `Room: ${roomId}`;
 
     // WebSocket
-    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    const ws = new WebSocket(`wss://${window.location.host}/ws`);
     ws.onopen = () => ws.send(JSON.stringify({ Type: "join_room", RoomId: roomId }));
     ws.onmessage = (e) => {
         const msg = JSON.parse(e.data);
