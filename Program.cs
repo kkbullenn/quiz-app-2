@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
+
 var app = builder.Build();
 
 app.UseStaticFiles(new StaticFileOptions
@@ -36,9 +37,32 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = ""
 });
 
+app.UseWebSockets(new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromSeconds(30)
+});
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/ws")
+    {
+        if (context.WebSockets.IsWebSocketRequest)
+        {
+            var ws = await context.WebSockets.AcceptWebSocketAsync();
+            await QuizWebSocketHandler.HandleAsync(ws);
+        }
+        else
+        {
+            context.Response.StatusCode = 400;
+        }
+    }
+    else await next();
+});
+
 app.UseDefaultFiles();
 app.UseCors();
 app.UseAuthentication();
+app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
 

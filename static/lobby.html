@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CineQuiz — Lobby</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        :root { --bg: #0a0a0f; --card: #111118; --border: rgba(255,255,255,0.07); }
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg); font-family: "DM Sans", sans-serif; color: #e2e2f0; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ""; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; }
+        .content { position: relative; z-index: 1; }
+        .hero-glow { background: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(99,60,255,0.18) 0%, transparent 70%); }
+        .logo { font-family: "Bebas Neue", sans-serif; letter-spacing: 0.06em; }
+        nav { background: linear-gradient(to bottom, rgba(10,10,15,0.98) 0%, rgba(10,10,15,0) 100%); }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+        .hero-text { opacity: 0; transform: translateY(16px); animation: fadeUp 0.7s 0.1s cubic-bezier(0.22,1,0.36,1) forwards; }
+        .fade-up { opacity: 0; transform: translateY(20px); animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) forwards; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between content">
+        <a href="/categories.html" class="flex items-center gap-3">
+            <span class="logo text-3xl text-white tracking-widest">CINEQUIZ</span>
+            <span class="text-xs text-white/30 font-light hidden sm:block">/ movie trivia</span>
+        </a>
+        <button id="logout-btn" class="text-xs text-white border border-white/30 px-3 py-1 rounded-full hover:bg-white/10 transition-colors">Log out</button>
+    </nav>
+
+    <div class="hero-glow content pt-28 pb-8 px-6 sm:px-10">
+        <div class="hero-text max-w-2xl mx-auto">
+            <p id="quiz-category" class="text-xs font-medium tracking-[0.3em] text-violet-400/80 mb-2 uppercase"></p>
+            <h1 id="quiz-title" class="logo text-6xl sm:text-7xl text-white leading-none mb-1"></h1>
+            <p class="text-white/40 text-sm font-light">Share the room code below with friends, then start when ready.</p>
+        </div>
+    </div>
+
+    <main class="content max-w-2xl mx-auto px-6 sm:px-10 pb-24 flex flex-col gap-5">
+
+        <!-- Room code card -->
+        <div class="card p-6 fade-up" style="animation-delay:0.2s">
+            <p class="text-xs font-medium tracking-[0.2em] text-white/40 uppercase mb-3">Room Code</p>
+            <div class="flex items-center justify-between gap-4">
+                <span id="room-code" class="logo text-5xl text-violet-400 tracking-widest"></span>
+                <button id="copy-btn" class="text-xs text-white border border-white/20 px-4 py-2 rounded-full hover:bg-white/10 transition-colors">Copy</button>
+            </div>
+        </div>
+
+        <!-- Players card -->
+        <div class="card p-6 fade-up" style="animation-delay:0.3s">
+            <div class="flex items-center justify-between mb-4">
+                <p class="text-xs font-medium tracking-[0.2em] text-white/40 uppercase">Players in room</p>
+                <span id="player-count" class="logo text-3xl text-white">1</span>
+            </div>
+            <div id="activity-log" class="flex flex-col gap-1 min-h-[40px]">
+                <p class="text-sm text-white/50">• You joined the room.</p>
+            </div>
+        </div>
+
+        <!-- Start button -->
+        <div class="fade-up flex justify-end" style="animation-delay:0.4s">
+            <button id="start-btn" class="px-8 py-3 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-full transition-colors">
+                Start Quiz →
+            </button>
+        </div>
+    </main>
+
+    <script src="/js/client.js"></script>
+    <script src="/js/lobby.js"></script>
+</body>
+</html>

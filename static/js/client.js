@@ -190,6 +190,31 @@ if (document.getElementById("admin-root")) {
 } else if (document.getElementById("categories-container")) {
     requireAuth();
 
+    // Join room handler — code format: {quizId}-{roomId}
+    document.getElementById("join-room-btn").addEventListener("click", () => {
+        const raw = document.getElementById("room-code-input").value.trim();
+        const dashIndex = raw.indexOf("-");
+        const errEl = document.getElementById("join-error");
+
+        if (dashIndex < 1 || dashIndex === raw.length - 1) {
+            errEl.textContent = "Enter a valid code (e.g. 3-AB3K9Z)";
+            errEl.style.display = "block";
+            return;
+        }
+
+        const quizId = raw.substring(0, dashIndex);
+        const roomId = raw.substring(dashIndex + 1).toUpperCase();
+
+        if (isNaN(quizId)) {
+            errEl.textContent = "Invalid code format.";
+            errEl.style.display = "block";
+            return;
+        }
+
+        errEl.style.display = "none";
+        window.location.href = `/lobby.html?quizId=${quizId}&roomId=${encodeURIComponent(roomId)}`;
+    });
+
     (async () => {
         try {
             const categories = await apiFetch("/categories");

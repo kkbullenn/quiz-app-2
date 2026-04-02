@@ -145,6 +145,18 @@
 
 
 
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+      }
+
+      .fade-up {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+
       /* Nav */
       nav {
         background: linear-gradient(
@@ -182,11 +194,39 @@
       </div>
     </div>
 
+    <!-- Multiplayer quick-access -->
+    <section class="content max-w-2xl mx-auto px-6 sm:px-10 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <!-- Join a Room -->
+        <div class="card p-5 fade-up" style="animation-delay:0.2s">
+          <p class="text-xs font-medium tracking-[0.2em] text-white/40 uppercase mb-3">Join a Room</p>
+          <div class="flex gap-2">
+            <input id="room-code-input" type="text" placeholder="e.g. 3-AB3K9Z"
+              class="flex-1 min-w-0 bg-[#0a0a0f] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-violet-400/40 transition-colors" />
+            <button id="join-room-btn"
+              class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap">Join →</button>
+          </div>
+          <p id="join-error" class="text-xs text-red-400 mt-2" style="display:none"></p>
+        </div>
+
+        <!-- Create a Room -->
+        <div class="card p-5 fade-up" style="animation-delay:0.25s">
+          <p class="text-xs font-medium tracking-[0.2em] text-white/40 uppercase mb-3">Create a Room</p>
+          <p class="text-sm text-white/50 font-light leading-relaxed">Pick a category below, select a quiz, then click <span class="text-violet-400">Multiplayer</span> to open a lobby.</p>
+          <p class="text-xs text-white/25 mt-2">Share the code with friends so they can join.</p>
+        </div>
+
+      </div>
+    </section>
+
     <!-- Categories -->
     <main class="content max-w-2xl mx-auto px-6 sm:px-10 pb-24">
       <div id="categories-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       </div>
     </main>
+
+    
 
     <script src="js/client.js"></script>
   </body>

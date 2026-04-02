@@ -9,6 +9,8 @@ class QuizzesPage {
 
     // Fetch all quizzes for this category and render them
     async load() {
+        if (!requireAuth()) return;
+
         if (!this.categoryId) {
             this.container.textContent = "No category selected.";
             return;
@@ -17,7 +19,8 @@ class QuizzesPage {
         const heading = document.getElementById("category-heading");
         if (heading) heading.textContent = this.categoryName;
 
-        const quizzes = await fetch(`/categories/${this.categoryId}`).then(r => r.json());
+        const quizzes = await apiFetch(`/categories/${this.categoryId}`);
+        if (!quizzes) return;
 
         if (quizzes.length === 0) {
             this.container.innerHTML = `<p class="text-white/40 text-sm">No quizzes in this category yet.</p>`;
@@ -27,17 +30,26 @@ class QuizzesPage {
         quizzes.forEach((quiz, i) => this.renderQuiz(quiz, i));
     }
 
-    // Create and append a link for a single quiz
+    // Create and append a card with solo and multiplayer options for a single quiz
     renderQuiz(quiz, index = 0) {
-        const link = document.createElement("a");
-        link.className = "quiz-link";
-        link.style.animationDelay = `${0.1 + index * 0.07}s`;
-        link.href = `/quiz.html?quizId=${quiz.id}&quizTitle=${encodeURIComponent(quiz.title)}&categoryName=${encodeURIComponent(this.categoryName)}`;
-        link.innerHTML = `
-            <p class="text-base font-semibold text-white/90 leading-tight">${quiz.title}</p>
-            ${quiz.description ? `<p class="text-xs text-white/40 font-light mt-1">${quiz.description}</p>` : ""}
+        const card = document.createElement("div");
+        card.className = "quiz-link";
+        card.style.animationDelay = `${0.1 + index * 0.07}s`;
+        card.innerHTML = `
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-base font-semibold text-white/90 leading-tight">${quiz.title}</p>
+                    ${quiz.description ? `<p class="text-xs text-white/40 font-light mt-1">${quiz.description}</p>` : ""}
+                </div>
+                <div class="flex gap-2 shrink-0">
+                    <a href="/quiz.html?quizId=${quiz.id}&quizTitle=${encodeURIComponent(quiz.title)}&categoryName=${encodeURIComponent(this.categoryName)}"
+                       class="text-xs text-white border border-white/20 px-3 py-1.5 rounded-full hover:bg-white/10 transition-colors">Solo</a>
+                    <a href="/lobby.html?quizId=${quiz.id}&quizTitle=${encodeURIComponent(quiz.title)}&categoryName=${encodeURIComponent(this.categoryName)}"
+                       class="text-xs text-violet-400 border border-violet-400/30 px-3 py-1.5 rounded-full hover:bg-violet-400/10 transition-colors">Multiplayer</a>
+                </div>
+            </div>
         `;
-        this.container.appendChild(link);
+        this.container.appendChild(card);
     }
 }
 

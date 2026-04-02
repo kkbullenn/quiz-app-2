@@ -31,7 +31,7 @@ namespace quiz_app_2.Controllers
             var quizzes = await _db.GetAllQuizzesAsync();
             var filtered = quizzes.Where(q => q.CategoryId == id).ToList();
 
-            return Ok(new { category, quizzes = filtered });
+            return Ok(filtered);
         }
     }
 }
