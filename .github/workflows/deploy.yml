@@ -23,7 +23,7 @@ jobs:
             cd ~/quiz-app-2
             git pull origin main
             docker stop quiz-app || true
-            docker rm quiz-app || true
+            docker rm -f quiz-app || true
             docker rmi quiz-app-2 || true
             docker build -t quiz-app-2 .
             docker run -d -p 8080:8080 \
