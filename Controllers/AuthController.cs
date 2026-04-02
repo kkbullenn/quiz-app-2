@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using quiz_app_2.Services;
 using System.IdentityModel.Tokens.Jwt;
@@ -65,6 +66,27 @@ namespace quiz_app_2.Controllers
 
             var token = GenerateToken(user.Id, user.Email, user.IsAdmin);
             return Ok(new { success = true, token, isAdmin = user.IsAdmin });
+        }
+
+        [Authorize]
+        [HttpGet("/me")]
+        public async Task<IActionResult> Me()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId")?.Value;
+            if (userIdClaim == null || !int.TryParse(userIdClaim, out var userId))
+                return Unauthorized(new { error = "Invalid token" });
+
+            var user = await _db.GetUserByIdAsync(userId);
+            if (user == null) return NotFound(new { error = "User not found" });
+
+            return Ok(new
+            {
+                id = user.Id,
+                email = user.Email,
+                apiCallsConsumed = user.ApiCallsConsumed,
+                apiCallsLimit = user.ApiCallsLimit,
+                isAdmin = user.IsAdmin
+            });
         }
     }
 
