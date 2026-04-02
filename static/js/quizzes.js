@@ -26,7 +26,6 @@ class QuizzesPage {
             this.container.innerHTML = `<p class="text-white/40 text-sm">No quizzes in this category yet.</p>`;
             return;
         }
-
         quizzes.forEach((quiz, i) => this.renderQuiz(quiz, i));
     }
 
