@@ -17,14 +17,18 @@ class QuizzesPage {
         const heading = document.getElementById("category-heading");
         if (heading) heading.textContent = this.categoryName;
 
-        const quizzes = await fetch(`/categories/${this.categoryId}`).then(r => r.json());
+        const quizzes = await fetch(`/categories/${this.categoryId}`, {
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                "Content-Type": "application/json"
+            }
+        }).then(r => r.json());
 
         if (quizzes.length === 0) {
             this.container.innerHTML = `<p class="text-white/40 text-sm">No quizzes in this category yet.</p>`;
             return;
         }
-
-        quizzes.forEach((quiz, i) => this.renderQuiz(quiz, i));
+        quizzes["quizzes"].forEach((quiz, i) => this.renderQuiz(quiz, i));
     }
 
     // Create and append a link for a single quiz
