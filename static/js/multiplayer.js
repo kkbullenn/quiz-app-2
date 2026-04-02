@@ -12,7 +12,7 @@
     document.getElementById("room-code-display").textContent = `Room: ${roomId}`;
 
     // WebSocket
-    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    const ws = new WebSocket(`wss://${window.location.host}/ws`);
     ws.onopen = () => ws.send(JSON.stringify({ Type: "join_room", RoomId: roomId }));
     ws.onmessage = (e) => {
         const msg = JSON.parse(e.data);
@@ -22,12 +22,24 @@
 
     function addFeed(text) {
         const feed = document.getElementById("live-feed");
-        // Clear the placeholder on first real event
         if (feed.querySelector("p.text-white\\/30")) feed.innerHTML = "";
         const entry = document.createElement("p");
         entry.className = "text-xs text-white/50";
         entry.textContent = `• ${text}`;
         feed.prepend(entry);
+    }
+
+    // Resolves a Tenor page URL to a direct .gif media URL
+    async function resolveTenorGif(pageUrl) {
+        const postId = pageUrl.match(/(\d+)$/)?.[1];
+        if (!postId) return null;
+        try {
+            const res = await fetch(`https://api.tenor.com/v1/gifs?ids=${postId}&key=LIVDSRZULELA`);
+            const data = await res.json();
+            return data.results?.[0]?.media?.[0]?.gif?.url ?? null;
+        } catch {
+            return null;
+        }
     }
 
     // Quiz state
@@ -50,13 +62,27 @@
         }
     }
 
-    function renderQuestion() {
+    async function renderQuestion() {
         answered = false;
         const q = questions[currentIndex];
         document.getElementById("question-number").textContent =
             `Question ${currentIndex + 1} of ${questions.length}`;
         document.getElementById("question-text").textContent = q.question.text;
         document.getElementById("next-btn").disabled = true;
+
+        // Resolve and display GIF
+        const gifEl = document.getElementById("question-gif");
+        if (q.question.mediaType === "gif" && q.question.mediaUrl) {
+            gifEl.innerHTML = `<p class="text-xs text-white/30">Loading GIF...</p>`;
+            const gifUrl = await resolveTenorGif(q.question.mediaUrl);
+            if (gifUrl) {
+                gifEl.innerHTML = `<img src="${gifUrl}" class="rounded-xl w-full min-h-48 max-h-72 object-contain" alt="Question GIF" />`;
+            } else {
+                gifEl.innerHTML = "";
+            }
+        } else {
+            gifEl.innerHTML = "";
+        }
 
         const answersEl = document.getElementById("answers");
         answersEl.innerHTML = "";

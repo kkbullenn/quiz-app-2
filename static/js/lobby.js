@@ -29,7 +29,7 @@
     });
 
     // WebSocket
-    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    const ws = new WebSocket(`wss://${window.location.host}/ws`);
 
     ws.onopen = () => {
         ws.send(JSON.stringify({ Type: "join_room", RoomId: roomId }));
