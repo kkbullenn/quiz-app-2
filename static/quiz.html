@@ -1,20 +1,87 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CineQuiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>Quiz</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        :root { --bg: #0a0a0f; --card: #111118; --card-hover: #1a1a26; --border: rgba(255,255,255,0.07); --accent: #7c3aed; }
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg); font-family: "DM Sans", sans-serif; color: #e2e2f0; min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ""; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; }
+        .content { position: relative; z-index: 1; }
+        .hero-glow { background: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(99,60,255,0.18) 0%, transparent 70%); }
+        .logo { font-family: "Bebas Neue", sans-serif; letter-spacing: 0.06em; }
+        nav { background: linear-gradient(to bottom, rgba(10,10,15,0.98) 0%, rgba(10,10,15,0) 100%); }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+        .answer-btn {
+            width: 100%; text-align: left; padding: 14px 18px;
+            background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+            color: #e2e2f0; font-family: "DM Sans", sans-serif; font-size: 0.875rem;
+            cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .answer-btn:hover:not(:disabled) { background: var(--card-hover); border-color: rgba(255,255,255,0.15); }
+        .answer-btn:disabled { cursor: default; }
+        .answer-btn.correct { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.5); color: #86efac; }
+        .answer-btn.incorrect { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); color: #fca5a5; }
+        .fade-up { opacity: 0; transform: translateY(20px); animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) forwards; }
+        .hero-text { opacity: 0; transform: translateY(16px); animation: fadeUp 0.7s 0.1s cubic-bezier(0.22,1,0.36,1) forwards; }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+        #end-screen { display: none; }
+    </style>
 </head>
-<body>  
-    <div id="quiz-container">
-        <p id="quiz-category"></p>
-        <h1 id="quiz-title"></h1>
-        <div id="quiz-question"></div>
-        <div class="flex flex-col" id="quiz-answers"></div>
-        <button id="next-question">next</button>
+    
+<body>
+<nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex items-center justify-between content">
+    <a href="/categories.html" class="flex items-center gap-3">
+        <span class="logo text-3xl text-white tracking-widest">CINEQUIZ</span>
+        <span class="text-xs text-white/30 font-light hidden sm:block">/ movie trivia</span>
+    </a>
+</nav>
+
+<div class="hero-glow content pt-28 pb-6 px-6 sm:px-10">
+    <div class="hero-text max-w-2xl mx-auto">
+        <p id="quiz-category" class="text-xs font-medium tracking-[0.3em] text-violet-400/80 mb-1 uppercase"></p>
+        <h1 id="quiz-title" class="logo text-5xl sm:text-6xl text-white leading-none"></h1>
     </div>
+</div>
+
+<main class="content max-w-2xl mx-auto px-6 sm:px-10 pb-24 flex flex-col gap-5">
+
+    <!-- Quiz screen -->
+    <div id="quiz-screen">
+        <div class="card p-6 fade-up flex flex-col gap-5" style="animation-delay:0.2s">
+            <div class="flex items-center justify-between">
+                <p id="question-number" class="text-xs font-medium tracking-[0.2em] text-white/40 uppercase"></p>
+            </div>
+            <p id="question-text" class="text-lg font-medium text-white/90 leading-snug"></p>
+            <div id="question-gif"></div>
+            <div id="answers" class="flex flex-col gap-2"></div>
+            <div class="flex justify-end pt-1">
+                <button id="next-btn" disabled
+                        class="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-default text-white text-sm font-medium rounded-full transition-colors">
+                    Next →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- End screen -->
+    <div id="end-screen" class="card p-10 text-center fade-up">
+        <p class="logo text-6xl text-violet-400 mb-2">DONE!</p>
+        <p class="text-white/50 text-sm mb-6">You completed the quiz.</p>
+        <p id="score-text" class="text-white font-medium mb-8"></p>
+        <a href="/categories.html" class="px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-full transition-colors">
+            Back to Categories
+        </a>
+    </div>
+
+</main>
+
+<script src="/js/client.js"></script>
+<script src="/js/quiz.js"></script>
 </body>
-<script type="module" src="js/quiz.js"></script>
 </html>
